@@ -39,3 +39,9 @@ Congratulations, your device should work just like a real cardio, use
 your favorite tools instructions to play (e.g. `spicetools -cardio`).
 
 The keypad should be recognized as an additional USB device.
+
+# Todo
+
+- draw wiring diagram
+- keypad support
+- spiceapi support
