@@ -18,8 +18,8 @@ enum iccx_sensor_state {
 };
 
 enum iccx_card_type {
-    AC_IO_ICCx_CARD_TYPE_ISO15696 = 0x30,
-    AC_IO_ICCx_CARD_TYPE_FELICA = 0x31,
+    AC_IO_ICCx_CARD_TYPE_ISO15696 = 0x00,
+    AC_IO_ICCx_CARD_TYPE_FELICA = 0x01,
 };
 
 enum iccx_keypad_mask {
@@ -53,8 +53,9 @@ typedef struct  iccx_state_s {
     uint8_t card_type;
     uint8_t uid[8];
     uint8_t unk2;
-    uint8_t unk3;
-    uint8_t unk4[4];
+    uint8_t keypad_started;
+    uint8_t key_events[2];
+    uint16_t key_state;
 } iccx_state_t;
 
 typedef struct iccx_key_state_s {
@@ -64,7 +65,7 @@ typedef struct iccx_key_state_s {
     uint8_t key4;
 } iccx_key_state_t;
 
-bool iccx_init(uint8_t node_id);
-bool iccx_scan_card(uint8_t *type, uint8_t *uid);
+bool iccx_init(uint8_t node_id, bool encrypted);
+bool iccx_scan_card(uint8_t *type, uint8_t *uid, uint16_t *key_state, bool encrypted);
 
 #endif

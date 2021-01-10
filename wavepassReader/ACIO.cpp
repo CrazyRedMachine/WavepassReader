@@ -329,8 +329,8 @@ bool acio_open()
     if (acio_node_count == 0) {
         return false;
     }
-
     for (uint8_t i = 0; i < acio_node_count; i++) {
+delay(200);
         if (!acio_get_version(
                 i + 1, acio_node_products[i])) {
             return false;
@@ -338,6 +338,7 @@ bool acio_open()
     }
 
     for (uint8_t i = 0; i < acio_node_count; i++) {
+delay(200);
         if (!acio_start_node(i + 1)) {
             return false;
         }

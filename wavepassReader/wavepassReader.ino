@@ -10,7 +10,8 @@
 Cardio_ Cardio;
 #endif
 
-bool g_passthrough = false;
+bool g_passthrough = false; // native mode (use arduino as simple TTL to USB)
+bool g_encrypted = true; // FeliCa support and new readers
 
 void setup() {
   // put your setup code here, to run once:
@@ -40,7 +41,7 @@ acio_open();
 #ifdef DEBUG
 Serial.println("iccx init");
 #endif
-  iccx_init(0);
+  iccx_init(0, g_encrypted);
 #ifdef DEBUG
 Serial.println("init all done, entering main loop.");
 #endif
@@ -59,35 +60,52 @@ void loop() {
 
   /* CARDIO MODE */
   static unsigned long lastResult = 0;
-  static uint32_t cardBusy = 0;
-  
-    /* KEYPAD */
-      /* TODO: use acio commands to retrieve keypad state */
+  static uint32_t cooldown = 0;
 
-
-    /* CARD SCAN */
-  if (millis()-lastResult < cardBusy) return;
-  
-  cardBusy = 0;
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
   uint8_t type = 0;
+  uint16_t keystate = 0;
+  /* use acio commands to retrieve all info */
+  if (millis()-lastResult < cooldown) return;
+  cooldown = 0;
+  if (!iccx_scan_card(&type,uid,&keystate,g_encrypted))
+  {
+#ifdef DEBUG
+Serial.println("Error communicating with wavepass reader.");
+#endif
+  }
+    /* KEYPAD */
+     
 
-  /* use acio commands to fill type and uid */
-  /* iccx_scan_card(&type,uid) */
-  iccx_scan_card(&type,uid);
+    /* CARD */  
  
   if (type)
   {
+    
+#ifdef DEBUG
+Serial.print("Found a card of type ");
+if (type == 1) Serial.print("ISO15693");
+else Serial.print("FeliCa");
+Serial.print(" with uid =");
+for (int i=0; i<8; i++)
+    {
+      Serial.print(" ");
+      if (uid[i] < 0x10) Serial.print("0");
+      Serial.print(uid[i], HEX);
+    }
+    Serial.println();
+#endif
+
 #ifdef WITH_USBHID 
     Cardio.setUID(type, uid);
     Cardio.sendState();
 #endif
     lastResult = millis();
-    cardBusy = 3000;
+    cooldown = 3000;
     return;
   }
   lastResult = millis();
-  cardBusy = 200;
+  cooldown = 200;
   
 }
 

@@ -13,7 +13,7 @@ void Cipher::setKeys(unsigned long client_key, unsigned long reader_key)
 unsigned short Cipher::CRCCCITT(unsigned char *data, unsigned int length)
 {
 
-    int count;
+    unsigned int count;
     unsigned long crc = 0;
     unsigned long temp;
 
@@ -30,7 +30,7 @@ unsigned short Cipher::CRCCCITT(unsigned char *data, unsigned int length)
 
 void Cipher::crypt(unsigned char* data, unsigned int length)
 {
-    int i = 0;
+    unsigned int i = 0;
     if (length > 0)
     {
         do
