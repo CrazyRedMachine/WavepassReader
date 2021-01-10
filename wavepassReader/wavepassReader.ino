@@ -2,6 +2,7 @@
 #include "ACIO.h"
 #include "ICCx.h"
 //#define DEBUG
+
 #define WITH_USBHID
 
 #ifdef WITH_USBHID
@@ -9,15 +10,16 @@
 #include <Keyboard.h>
 Cardio_ Cardio;
 #endif
+#define PIN_EJECT_BUTTON 7
 
 bool g_passthrough = false; // native mode (use arduino as simple TTL to USB)
-bool g_encrypted = true; // FeliCa support and new readers
+bool g_encrypted = true; // FeliCa support and new readers (set to false for ICCA support, set to true otherwise)
 
 void setup() {
   // put your setup code here, to run once:
  Serial.begin(57600);
  Serial1.begin(57600);
-
+ pinMode(PIN_EJECT_BUTTON, INPUT_PULLUP);
 /* TODO: check if passthrough */
 
 if (!g_passthrough)
@@ -65,6 +67,14 @@ void loop() {
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
   uint8_t type = 0;
   uint16_t keystate = 0;
+
+  /* card eject button */
+  if (digitalRead(PIN_EJECT_BUTTON)==LOW)
+  {
+    if (!g_encrypted)
+      iccx_eject_card();
+  }
+  
   /* use acio commands to retrieve all info */
   if (millis()-lastResult < cooldown) return;
   cooldown = 0;

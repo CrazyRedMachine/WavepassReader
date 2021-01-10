@@ -1,6 +1,7 @@
 #include "ICCx.h"
 #include "Cipher.h"
 //#define ICCX_DEBUG
+//#define LOCK_ONLY_ISO15693
 
 static uint8_t ard_key[4] = {0x29,0x23,0xbe,0x84};
 static uint8_t dev_key[4] = {0,0,0,0};
@@ -74,9 +75,52 @@ bool iccx_init(uint8_t node_id, bool encrypted)
     return true;
 }
 
+static bool iccx_set_state(
+    uint8_t node_id, int slot_state, icca_state_t *state)
+{
+    struct ac_io_message msg;
+
+    msg.addr = node_id + 1;
+    msg.cmd.code = ac_io_u16(AC_IO_CMD_ICCx_SET_SLOT_STATE);
+    msg.cmd.nbytes = 2;
+    /* buffer size of data we expect */
+    msg.cmd.raw[0] = sizeof(icca_state_t);
+    msg.cmd.raw[1] = slot_state;
+
+    if (!acio_send_and_recv(
+            &msg, offsetof(struct ac_io_message, cmd.raw) + msg.cmd.raw[0])) {
+        #ifdef ICCX_DEBUG
+        Serial.print("Setting state of node ");
+        Serial.print(node_id + 1);
+        Serial.println(" failed");
+            #endif
+        return false;
+    }
+
+    if (state != NULL) {
+        memcpy(state, msg.cmd.raw, sizeof(icca_state_t));
+    }
+
+    return true;
+}
+
+bool iccx_eject_card()
+{
+  if (!iccx_set_state(
+                0, AC_IO_ICCA_SLOT_STATE_EJECT, NULL)) {
+            return false;
+                }
+  if (!iccx_set_state(0, AC_IO_ICCA_SLOT_STATE_CLOSE, NULL)) 
+            {
+            return false;
+            }
+            return true;
+}
+
 static bool iccx_get_state(uint8_t node_id, iccx_state_t *state, bool encrypted)
 {
     struct ac_io_message msg;
+    static icca_state_t icca_state;
 
     msg.addr = node_id + 1;
     msg.cmd.code = ac_io_u16(encrypted? AC_IO_CMD_ICCx_FEL_POLL : AC_IO_CMD_ICCx_POLL);
@@ -94,8 +138,8 @@ static bool iccx_get_state(uint8_t node_id, iccx_state_t *state, bool encrypted)
         return false;
     }
     
-    /* got the data, decrypt it and check crc */
     if (encrypted)
+    /* got the encrypted data, decrypt it and check crc */
     {
       crypto.crypt(msg.cmd.raw,18);
       #ifdef ICCX_DEBUG
@@ -122,9 +166,51 @@ static bool iccx_get_state(uint8_t node_id, iccx_state_t *state, bool encrypted)
         return false;
       }    
     }
+    else
+    {
+/* eject card if invalid */
+      static bool need_reset = false;
+      if (((icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_BACK_ON) &&
+          (icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_FRONT_ON) &&
+          (icca_state.status_code & AC_IO_ICCA_SENSOR_NO_CARD))) {
+        if (!iccx_eject_card()) {
+            return false;
+        }
+    }
+
+#ifdef LOCK_ONLY_ISO15693
+        /* allow new card to be inserted when currently inserting ISO15693 */
+        if (((icca_state.status_code & AC_IO_ICCA_SENSOR_CARD)) && (!(icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_BACK_ON) ||
+            !(icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_FRONT_ON)))
+#else
+        /* allow new card to be inserted when slot is clear */
+        if (((!(icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_BACK_ON) &&
+            !(icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_FRONT_ON))))
+#endif
+        {
+            if (!iccx_set_state(node_id, AC_IO_ICCA_SLOT_STATE_OPEN, NULL)) 
+            {
+            return false;
+            }
+        }
+        /* lock the card when fully inserted */
+        if ((icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_BACK_ON) &&
+          (icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_FRONT_ON) &&
+          (icca_state.status_code & AC_IO_ICCA_SENSOR_CARD))
+        {
+          if (!iccx_set_state(
+                node_id, AC_IO_ICCA_SLOT_STATE_CLOSE, NULL)) 
+          {
+            return false;
+          }
+        }
+    
+      
+    }
 
     if (state != NULL) {
         memcpy(state, msg.cmd.raw, sizeof(iccx_state_t));
+        memcpy(&icca_state, msg.cmd.raw, sizeof(icca_state_t));
     }
 
     return true;
@@ -144,6 +230,7 @@ static bool iccx_read_card(uint8_t node_id, iccx_state_t *state, bool encrypted)
     }
     else
     {
+      
       msg.cmd.code = ac_io_u16(AC_IO_CMD_ICCx_ENGAGE);
       msg.cmd.nbytes = 1;
       msg.cmd.count = sizeof(iccx_state_t);
@@ -216,7 +303,14 @@ bool iccx_scan_card(uint8_t *type, uint8_t *uid, uint16_t *key_state, bool encry
     Serial.println(")");
    }
   #endif
-
+  
+  if (!encrypted)
+  {
+    if (state.card_type != 0x30){
+      *type = 0;
+      return true;
+    }
+  }
   *key_state = state.key_state;
   if (state.sensor_state == AC_IO_ICCx_SENSOR_CARD) {
   memcpy(uid, state.uid, 8);
