@@ -28,7 +28,7 @@ In all cases you still need a rs232 to TTL adapter (I use a max3232 based one).
 
 # Keypad support (coming soon)
 
-Just plug a keypad to your wavepass reader and it should work.
+Just plug a keypad to your reader and it should work.
 
 # How to use
 
