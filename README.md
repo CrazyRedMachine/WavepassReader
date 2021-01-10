@@ -18,7 +18,9 @@ ICCA only supports ISO15693 cards. ICCB and ICCC support both ISO15693 and FeliC
 # Pinout
 
 ICCB and ICCC Wavepass readers work perfectly fine on 5V straight from the Arduino (even though they are powered with 12V in cabs).
+
 ICCA (slotted reader) worked from a 5V wall PSU but not from the arduino. It's better to use 12V in this case.
+
 In all cases you still need a rs232 to TTL adapter (I use a max3232 based one).
 
 - Plug the wavepass serial through the adapter then into arduino interface Serial1 ( pin 0/1 on leonardo/pro micro).
