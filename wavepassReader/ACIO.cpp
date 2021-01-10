@@ -1,5 +1,5 @@
 #include "ACIO.h"
-#define ACIO_DEBUG
+//#define ACIO_DEBUG
 
 static uint8_t acio_msg_counter = 1;
 static uint8_t acio_node_count;
@@ -63,7 +63,6 @@ int acio_receive(uint8_t *buffer, int size)
     int read = 0;
     uint8_t checksum = 0;
     int result_size = 0;
-    int initsize = size;
     /* reading a byte stream, we are getting a varying amount
        of 0xAAs before we get a valid message. */
     recv_buf[0] = AC_IO_SOF;
@@ -172,7 +171,7 @@ bool acio_send_and_recv(struct ac_io_message *msg, int resp_size)
         return false;
     }
 
-    delay(500); //wait a little between send and receive 
+    delay(200); //wait a little between send and receive 
     
     /* remember the sent cmd for sanity check */
     uint16_t req_code = msg->cmd.code;
@@ -182,7 +181,7 @@ bool acio_send_and_recv(struct ac_io_message *msg, int resp_size)
     }
 
     /* sanity check */
-    if (msg->cmd.code != 0 && req_code != msg->cmd.code) {
+    if (req_code != msg->cmd.code) {
       #ifdef ACIO_DEBUG
         Serial.print("Received invalid response ");
         Serial.print(msg->cmd.code, HEX);
@@ -205,7 +204,6 @@ Serial.println("INIT DEVICE");
     uint8_t read_buff = 0x00;
 
     /* init/reset the device by sending 0xAA until 0xAA is returned */
-    int read = 0;
     do {
         Serial1.write(AC_IO_SOF);
 
@@ -247,7 +245,6 @@ static uint8_t acio_enum_nodes(void)
 #ifdef ACIO_DEBUG
 Serial.println("Enumerating nodes...");
 #endif
-delay(14);
     if (!acio_send_and_recv(&msg, offsetof(struct ac_io_message, cmd.raw) + 1)) {
 #ifdef ACIO_DEBUG
 Serial.println("Enumerating nodes failed");

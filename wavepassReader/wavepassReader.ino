@@ -1,7 +1,8 @@
+
 #include "ACIO.h"
 #include "ICCx.h"
-
-//#define WITH_USBHID
+//#define DEBUG
+#define WITH_USBHID
 
 #ifdef WITH_USBHID
 #include "Cardio.h"
@@ -21,7 +22,9 @@ void setup() {
 if (!g_passthrough)
 {
   delay(5000);
+#ifdef DEBUG
   Serial.println("INIT CARDIO MODE");
+#endif
 
 #ifdef WITH_USBHID
   Keyboard.begin();
@@ -29,12 +32,18 @@ if (!g_passthrough)
 #endif
 
   delay(1000);
-  Serial.println("acio open");
-  acio_open();
+#ifdef DEBUG
+Serial.println("acio open");
+#endif
+acio_open();
   delay(1000);
-  Serial.println("iccx init");
+#ifdef DEBUG
+Serial.println("iccx init");
+#endif
   iccx_init(0);
-  Serial.println("init all done, entering main loop.");
+#ifdef DEBUG
+Serial.println("init all done, entering main loop.");
+#endif
 }
 
 }
