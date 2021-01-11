@@ -171,7 +171,7 @@ bool acio_send_and_recv(struct ac_io_message *msg, int resp_size)
         return false;
     }
 
-    delay(500); //wait a little between send and receive 
+   // delay(500); //wait a little between send and receive 
     
     /* remember the sent cmd for sanity check */
     uint16_t req_code = msg->cmd.code;
@@ -330,7 +330,7 @@ bool acio_open()
         return false;
     }
     for (uint8_t i = 0; i < acio_node_count; i++) {
-delay(200);
+delay(500);
         if (!acio_get_version(
                 i + 1, acio_node_products[i])) {
             return false;
@@ -338,7 +338,7 @@ delay(200);
     }
 
     for (uint8_t i = 0; i < acio_node_count; i++) {
-delay(200);
+delay(500);
         if (!acio_start_node(i + 1)) {
             return false;
         }

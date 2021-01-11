@@ -1,9 +1,9 @@
 
 #include "ACIO.h"
 #include "ICCx.h"
-//#define DEBUG
+#define DEBUG
 
-#define WITH_USBHID
+//#define WITH_USBHID
 
 #ifdef WITH_USBHID
 #include "Cardio.h"
@@ -13,7 +13,7 @@ Cardio_ Cardio;
 #define PIN_EJECT_BUTTON 7
 
 bool g_passthrough = false; // native mode (use arduino as simple TTL to USB)
-bool g_encrypted = true; // FeliCa support and new readers (set to false for ICCA support, set to true otherwise)
+bool g_encrypted = false; // FeliCa support and new readers (set to false for ICCA support, set to true otherwise)
 
 void setup() {
   // put your setup code here, to run once:
@@ -85,7 +85,21 @@ Serial.println("Error communicating with wavepass reader.");
 #endif
   }
     /* KEYPAD */
-     
+  Serial.print("(mainloop) keystate = ");
+  Serial.println(keystate,HEX);
+     //everything is now in the keystate variable, we can use the masks in ICCx.h to parse
+ if (keystate&ICCx_KEYPAD_MASK_0) Serial.println("0");
+ if (keystate&ICCx_KEYPAD_MASK_00) Serial.println("00");
+ if (keystate&ICCx_KEYPAD_MASK_EMPTY) Serial.println("empty");
+ if (keystate&ICCx_KEYPAD_MASK_1) Serial.println("1");
+ if (keystate&ICCx_KEYPAD_MASK_2) Serial.println("2");
+ if (keystate&ICCx_KEYPAD_MASK_3) Serial.println("3");
+ if (keystate&ICCx_KEYPAD_MASK_4) Serial.println("4");
+ if (keystate&ICCx_KEYPAD_MASK_5) Serial.println("5");
+ if (keystate&ICCx_KEYPAD_MASK_6) Serial.println("6");
+ if (keystate&ICCx_KEYPAD_MASK_7) Serial.println("7");
+ if (keystate&ICCx_KEYPAD_MASK_8) Serial.println("8");
+ if (keystate&ICCx_KEYPAD_MASK_9) Serial.println("9");
 
     /* CARD */  
  
@@ -111,11 +125,11 @@ for (int i=0; i<8; i++)
     Cardio.sendState();
 #endif
     lastResult = millis();
-    cooldown = 3000;
+    cooldown = 0; //no cooldown cause I still need to read the keypad
     return;
   }
   lastResult = millis();
-  cooldown = 200;
+  cooldown = 0; //no cooldown cause I still need to read the keypad
   
 }
 

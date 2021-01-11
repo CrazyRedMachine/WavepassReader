@@ -267,7 +267,7 @@ bool iccx_scan_card(uint8_t *type, uint8_t *uid, uint16_t *key_state, bool encry
   #endif
   return false;
  }
-  delay(200);
+  //delay(200);
   
   #ifdef ICCX_DEBUG
    Serial.println("STEP2. GET STATE");
@@ -304,6 +304,7 @@ bool iccx_scan_card(uint8_t *type, uint8_t *uid, uint16_t *key_state, bool encry
    }
   #endif
   
+  *key_state = state.key_state;
   if (!encrypted)
   {
     if (state.card_type != 0x30){
@@ -311,7 +312,6 @@ bool iccx_scan_card(uint8_t *type, uint8_t *uid, uint16_t *key_state, bool encry
       return true;
     }
   }
-  *key_state = state.key_state;
   if (state.sensor_state == AC_IO_ICCx_SENSOR_CARD) {
   memcpy(uid, state.uid, 8);
   *type = (state.card_type&0x0F)+1;
