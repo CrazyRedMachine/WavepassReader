@@ -1,11 +1,12 @@
 
 #include "ACIO.h"
 #include "ICCx.h"
-#define DEBUG
+//#define DEBUG
 
 //#define WITH_USBHID
 
 #ifdef WITH_USBHID
+#define USB_HID_COOLDOWN 3000
 #include "Cardio.h"
 #include <Keyboard.h>
 Cardio_ Cardio;
@@ -61,9 +62,6 @@ void loop() {
   }
 
   /* CARDIO MODE */
-  static unsigned long lastResult = 0;
-  static uint32_t cooldown = 0;
-
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
   uint8_t type = 0;
   uint16_t keystate = 0;
@@ -72,12 +70,10 @@ void loop() {
   if (digitalRead(PIN_EJECT_BUTTON)==LOW)
   {
     if (!g_encrypted)
-      iccx_eject_card();
+      iccx_eject_card(AC_IO_ICCA_SLOT_STATE_OPEN);
   }
   
   /* use acio commands to retrieve all info */
-  if (millis()-lastResult < cooldown) return;
-  cooldown = 0;
   if (!iccx_scan_card(&type,uid,&keystate,g_encrypted))
   {
 #ifdef DEBUG
@@ -85,8 +81,6 @@ Serial.println("Error communicating with wavepass reader.");
 #endif
   }
     /* KEYPAD */
-  Serial.print("(mainloop) keystate = ");
-  Serial.println(keystate,HEX);
      //everything is now in the keystate variable, we can use the masks in ICCx.h to parse
  if (keystate&ICCx_KEYPAD_MASK_0) Serial.println("0");
  if (keystate&ICCx_KEYPAD_MASK_00) Serial.println("00");
@@ -121,15 +115,13 @@ for (int i=0; i<8; i++)
 #endif
 
 #ifdef WITH_USBHID 
+  static unsigned long lastReport = 0;
+  if (millis()-lastReport < USB_HID_COOLDOWN) return;
     Cardio.setUID(type, uid);
     Cardio.sendState();
+    lastReport = millis();    
 #endif
-    lastResult = millis();
-    cooldown = 0; //no cooldown cause I still need to read the keypad
-    return;
   }
-  lastResult = millis();
-  cooldown = 0; //no cooldown cause I still need to read the keypad
   
 }
 

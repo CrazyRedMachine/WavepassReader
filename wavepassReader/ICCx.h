@@ -13,11 +13,11 @@ enum iccx_cmd {
     AC_IO_CMD_ICCx_FEL_POLL = 0x0164,
 };
 
-enum ac_io_icca_slot_state {
+typedef enum ac_io_icca_slot_state {
     AC_IO_ICCA_SLOT_STATE_OPEN = 0x11,
     AC_IO_ICCA_SLOT_STATE_EJECT = 0x12,
     AC_IO_ICCA_SLOT_STATE_CLOSE = 0x00,
-};
+} icca_slot_state_t;
 
 enum icca_sensor_state {
     /* Card eject event fired once after slot state is set to eject the card */
@@ -85,6 +85,6 @@ typedef struct iccx_key_state_s {
 
 bool iccx_init(uint8_t node_id, bool encrypted);
 bool iccx_scan_card(uint8_t *type, uint8_t *uid, uint16_t *key_state, bool encrypted);
-bool iccx_eject_card();
+bool iccx_eject_card(icca_slot_state_t post_state);
 
 #endif

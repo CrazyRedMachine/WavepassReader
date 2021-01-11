@@ -2,13 +2,14 @@
 #include "Cipher.h"
 //#define ICCX_DEBUG
 //#define LOCK_ONLY_ISO15693
+#define EJECT_DELAY 1000
 
-static uint8_t ard_key[4] = {0x29,0x23,0xbe,0x84};
-static uint8_t dev_key[4] = {0,0,0,0};
 Cipher crypto;
 
 static bool iccx_key_exchange(uint8_t node_id)
 {
+    static uint8_t ard_key[4] = {0x29,0x23,0xbe,0x84};
+    static uint8_t dev_key[4] = {0,0,0,0};
     struct ac_io_message msg;
 
     msg.addr = node_id;
@@ -104,13 +105,14 @@ static bool iccx_set_state(
     return true;
 }
 
-bool iccx_eject_card()
+bool iccx_eject_card(icca_slot_state_t post_state)
 {
   if (!iccx_set_state(
                 0, AC_IO_ICCA_SLOT_STATE_EJECT, NULL)) {
             return false;
                 }
-  if (!iccx_set_state(0, AC_IO_ICCA_SLOT_STATE_CLOSE, NULL)) 
+       
+  if ((post_state != 0) && !iccx_set_state(0, post_state, NULL)) 
             {
             return false;
             }
@@ -168,17 +170,38 @@ static bool iccx_get_state(uint8_t node_id, iccx_state_t *state, bool encrypted)
     }
     else
     {
-/* eject card if invalid */
       static bool need_reset = false;
-      if (((icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_BACK_ON) &&
+#ifndef LOCK_ONLY_ISO15693
+        /* eject card if invalid */        
+        static unsigned int eject_cooldown = 0;
+        if (eject_cooldown > 0) eject_cooldown--;
+        static unsigned long long eject_request_time = 0;
+        if (((icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_BACK_ON) &&
           (icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_FRONT_ON) &&
-          (icca_state.status_code & AC_IO_ICCA_SENSOR_NO_CARD))) {
-        if (!iccx_eject_card()) {
-            return false;
+          (icca_state.status_code & AC_IO_ICCA_SENSOR_NO_CARD))) 
+        {
+          Serial.println("bad card inside");
+            unsigned long long curr_time = millis();
+            if ((eject_request_time != 0) && (curr_time - eject_request_time >= EJECT_DELAY))
+            {
+              Serial.println("eject now!");
+              eject_cooldown = 20;
+              if (!iccx_eject_card(AC_IO_ICCA_SLOT_STATE_CLOSE))
+              {
+              return false;
+              }            
+              eject_request_time = 0;
+              need_reset = true;
+            }
+            else if ((eject_cooldown == 0) && (eject_request_time == 0))
+            {
+              Serial.println("request eject!");
+              eject_request_time = curr_time;
+            }
         }
-    }
+#endif
 
-#ifdef LOCK_ONLY_ISO15693
+#ifdef LOCK_ONLY_ISO15693  
         /* allow new card to be inserted when currently inserting ISO15693 */
         if (((icca_state.status_code & AC_IO_ICCA_SENSOR_CARD)) && (!(icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_BACK_ON) ||
             !(icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_FRONT_ON)))
@@ -188,11 +211,27 @@ static bool iccx_get_state(uint8_t node_id, iccx_state_t *state, bool encrypted)
             !(icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_FRONT_ON))))
 #endif
         {
+          if (need_reset)
+          {
+            if (!iccx_set_state(node_id, AC_IO_ICCA_SLOT_STATE_CLOSE, NULL)) 
+            {
+            return false;
+            }
+            need_reset = false;
+          }
             if (!iccx_set_state(node_id, AC_IO_ICCA_SLOT_STATE_OPEN, NULL)) 
             {
             return false;
             }
         }
+        #ifdef LOCK_ONLY_ISO15693  
+        else {
+            if (!iccx_set_state(node_id, AC_IO_ICCA_SLOT_STATE_CLOSE, NULL)) 
+            {
+            return false;
+            }
+        }
+#endif
         /* lock the card when fully inserted */
         if ((icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_BACK_ON) &&
           (icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_FRONT_ON) &&
