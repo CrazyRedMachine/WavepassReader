@@ -1,6 +1,6 @@
 #include "ICCx.h"
 #include "Cipher.h"
-//#define ICCX_DEBUG
+#define ICCX_DEBUG
 //#define LOCK_ONLY_ISO15693
 #define EJECT_DELAY 1000
 
@@ -170,9 +170,9 @@ static bool iccx_get_state(uint8_t node_id, iccx_state_t *state, bool encrypted)
     }
     else
     {
-      static bool need_reset = false;
 #ifndef LOCK_ONLY_ISO15693
-        /* eject card if invalid */        
+        /* eject card if invalid */
+        static bool need_reset = false;      
         static unsigned int eject_cooldown = 0;
         if (eject_cooldown > 0) eject_cooldown--;
         static unsigned long long eject_request_time = 0;
@@ -180,11 +180,15 @@ static bool iccx_get_state(uint8_t node_id, iccx_state_t *state, bool encrypted)
           (icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_FRONT_ON) &&
           (icca_state.status_code & AC_IO_ICCA_SENSOR_NO_CARD))) 
         {
+          #ifdef ICCX_DEBUG
           Serial.println("bad card inside");
+          #endif
             unsigned long long curr_time = millis();
             if ((eject_request_time != 0) && (curr_time - eject_request_time >= EJECT_DELAY))
             {
+              #ifdef ICCX_DEBUG
               Serial.println("eject now!");
+              #endif
               eject_cooldown = 20;
               if (!iccx_eject_card(AC_IO_ICCA_SLOT_STATE_CLOSE))
               {
@@ -195,7 +199,9 @@ static bool iccx_get_state(uint8_t node_id, iccx_state_t *state, bool encrypted)
             }
             else if ((eject_cooldown == 0) && (eject_request_time == 0))
             {
+              #ifdef ICCX_DEBUG
               Serial.println("request eject!");
+              #endif
               eject_request_time = curr_time;
             }
         }
@@ -211,7 +217,9 @@ static bool iccx_get_state(uint8_t node_id, iccx_state_t *state, bool encrypted)
             !(icca_state.sensor_state & AC_IO_ICCA_SENSOR_MASK_FRONT_ON))))
 #endif
         {
-          if (need_reset)
+
+#ifndef LOCK_ONLY_ISO15693
+        if (need_reset)
           {
             if (!iccx_set_state(node_id, AC_IO_ICCA_SLOT_STATE_CLOSE, NULL)) 
             {
@@ -219,12 +227,13 @@ static bool iccx_get_state(uint8_t node_id, iccx_state_t *state, bool encrypted)
             }
             need_reset = false;
           }
+#endif
             if (!iccx_set_state(node_id, AC_IO_ICCA_SLOT_STATE_OPEN, NULL)) 
             {
             return false;
             }
         }
-        #ifdef LOCK_ONLY_ISO15693  
+#ifdef LOCK_ONLY_ISO15693  
         else {
             if (!iccx_set_state(node_id, AC_IO_ICCA_SLOT_STATE_CLOSE, NULL)) 
             {

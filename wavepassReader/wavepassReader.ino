@@ -1,9 +1,9 @@
 
 #include "ACIO.h"
 #include "ICCx.h"
-//#define DEBUG
+#define DEBUG
 
-//#define WITH_USBHID
+#define WITH_USBHID
 
 #ifdef WITH_USBHID
 #define USB_HID_COOLDOWN 3000
@@ -11,10 +11,29 @@
 #include <Keyboard.h>
 Cardio_ Cardio;
 #endif
+
 #define PIN_EJECT_BUTTON 7
 
 bool g_passthrough = false; // native mode (use arduino as simple TTL to USB)
-bool g_encrypted = false; // FeliCa support and new readers (set to false for ICCA support, set to true otherwise)
+bool g_encrypted = true; // FeliCa support and new readers (set to false for ICCA support, set to true otherwise)
+
+static char g_keypad_code[12] = 
+{'0', ',', '\337',
+ '1', '2', '3', 
+ '4', '5', '6', 
+ '7', '8', '9'};
+
+static int g_keypad_mask[12] = 
+{ICCx_KEYPAD_MASK_0, ICCx_KEYPAD_MASK_00, ICCx_KEYPAD_MASK_EMPTY, 
+ ICCx_KEYPAD_MASK_1, ICCx_KEYPAD_MASK_2, ICCx_KEYPAD_MASK_3, 
+ ICCx_KEYPAD_MASK_4, ICCx_KEYPAD_MASK_5, ICCx_KEYPAD_MASK_6, 
+ ICCx_KEYPAD_MASK_7, ICCx_KEYPAD_MASK_8, ICCx_KEYPAD_MASK_9};
+ 
+static const char* g_keypad_printable[12] = 
+{"0", "00", "empty",
+ "1", "2", "3", 
+ "4", "5", "6", 
+ "7", "8", "9"};
 
 void setup() {
   // put your setup code here, to run once:
@@ -65,7 +84,8 @@ void loop() {
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
   uint8_t type = 0;
   uint16_t keystate = 0;
-
+  static uint16_t prev_keystate = 0;
+  
   /* card eject button */
   if (digitalRead(PIN_EJECT_BUTTON)==LOW)
   {
@@ -82,19 +102,13 @@ Serial.println("Error communicating with wavepass reader.");
   }
     /* KEYPAD */
      //everything is now in the keystate variable, we can use the masks in ICCx.h to parse
- if (keystate&ICCx_KEYPAD_MASK_0) Serial.println("0");
- if (keystate&ICCx_KEYPAD_MASK_00) Serial.println("00");
- if (keystate&ICCx_KEYPAD_MASK_EMPTY) Serial.println("empty");
- if (keystate&ICCx_KEYPAD_MASK_1) Serial.println("1");
- if (keystate&ICCx_KEYPAD_MASK_2) Serial.println("2");
- if (keystate&ICCx_KEYPAD_MASK_3) Serial.println("3");
- if (keystate&ICCx_KEYPAD_MASK_4) Serial.println("4");
- if (keystate&ICCx_KEYPAD_MASK_5) Serial.println("5");
- if (keystate&ICCx_KEYPAD_MASK_6) Serial.println("6");
- if (keystate&ICCx_KEYPAD_MASK_7) Serial.println("7");
- if (keystate&ICCx_KEYPAD_MASK_8) Serial.println("8");
- if (keystate&ICCx_KEYPAD_MASK_9) Serial.println("9");
-
+ 
+ for (int i=0; i<12; i++)
+ {
+  check_key(i, keystate, prev_keystate);
+ }
+ prev_keystate = keystate;
+ 
     /* CARD */  
  
   if (type)
@@ -134,4 +148,26 @@ void passthrough_loop() {
   while (Serial1.available()) {     // If anything comes in Serial1 (USB)
     Serial.write(Serial1.read());   // read it and send it out Serial (pins 0 and 1)
   }
+}
+
+
+#define IS_PRESSED(x) ((keystate&x)&&(!(prev_keystate&x)))
+#define IS_RELEASED(x) ((!(keystate&x))&&(prev_keystate&x))
+static void check_key(uint8_t i, int keystate, int prev_keystate)
+{
+
+ if (IS_PRESSED(g_keypad_mask[i]))
+ {
+  #ifdef DEBUG
+    Serial.println(g_keypad_printable[i]);
+  #endif
+#ifdef WITH_USBHID
+    Keyboard.press(g_keypad_code[i]);
+ }
+ else if (IS_RELEASED(g_keypad_mask[i]))
+ {
+    Keyboard.release(g_keypad_code[i]);
+#endif  
+ }
+
 }
