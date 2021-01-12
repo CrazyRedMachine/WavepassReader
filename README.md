@@ -46,9 +46,9 @@ Keypad is supported for all reader models through the 10-pin central connector.
 The official konami keypad is a 4+3 pin matrix.
 On the central connector, only 7 of the 10 pin are populated :
 
-xabcxxdefg
+ABCDxxEFGx
 
-Pins a b c are for columns 1 2 3 while pins d e f g are for rows 4 3 2 1.
+Pins E F G are for columns 1 2 3 while pins A B C D are for rows 4 3 2 1.
 
 If you don't have a konami 10-key, you can use any kind of 4+3 matrix keypad, as long as you rewire it to the correct pins.
 
@@ -58,18 +58,30 @@ here's an example with a commonly available cheap keypad :
 
 # Pinout
 
+There are 3 connectors on the card reader unit, with markings on the PCB indicating the first and last pin :
+
+- 3-pin large connector is for power input (Vcc on pin 2, GND on pin 3) 
+
+- 10-pin center connector is for the keypad matrix (see previous section for pinout)
+
+- 3-pin small connector is the serial interface (RX on pin 1, TX on pin 2, GND on pin 3)
+
 ICCB and ICCC Wavepass readers work perfectly fine on 5V straight from the Arduino (even though they are powered with 12V in cabs).
 
 ICCA (slotted reader) didn't work well when powered by the arduino. While it worked from a 5V wall PSU, I recommend using 12V for them.
 
+For all models you **need a rs232 to TTL adapter** (I use a max3232 based one).
 
-For all models you need a rs232 to TTL adapter (I use a max3232 based one).
-
-- Plug the wavepass serial through the adapter then into arduino interface Serial1 ( pin 0/1 on leonardo/pro micro).
-- Wire 3.3v from the arduino into the adapter
+- Plug the wavepass serial interface into the max3232 on rs232 side, then TTL side into the arduino Serial1 (pin 0/1 on leonardo/pro micro, pins 19/18 on mega).
+- Wire 3.3v from the arduino into the max3232 adapter on TTL side
 - (ICCA) Wire a 12v PSU into the wavepass reader
 - (ICCB, ICCC) Wire 5v from the arduino into the wavepass reader
 
+Here's an example with an ICCB
+
+![leo_pinout](https://github.com/CrazyRedMachine/WavepassReader/blob/main/diagrams/leo_pinout.png?raw=true)
+
+(ICCC follows the same pinout, while ICCA uses a 12V PSU into the power connector instead of going to arduino 5V/GND). 
 
 # How to use
 
@@ -88,6 +100,5 @@ The keypad should be recognized as an additional USB device.
 
 # Todo
 
-- draw wiring diagram
 - spiceapi support
 - (ICCA) eject the card when holding the keypad empty key for 3 seconds
