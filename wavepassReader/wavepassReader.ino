@@ -1,7 +1,7 @@
 
 #include "ACIO.h"
 #include "ICCx.h"
-#define DEBUG
+//#define DEBUG
 
 #define WITH_USBHID
 
@@ -44,7 +44,7 @@ void setup() {
 
 if (!g_passthrough)
 {
-  delay(5000);
+  delay(2000);
 #ifdef DEBUG
   Serial.println("INIT CARDIO MODE");
 #endif
@@ -79,7 +79,7 @@ void loop() {
     passthrough_loop();
     return;
   }
-
+//delay(1000);
   /* CARDIO MODE */
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
   uint8_t type = 0;

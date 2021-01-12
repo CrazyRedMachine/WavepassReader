@@ -171,7 +171,7 @@ bool acio_send_and_recv(struct ac_io_message *msg, int resp_size)
         return false;
     }
 
-   // delay(500); //wait a little between send and receive 
+   //delay(100); //wait a little between send and receive 
     
     /* remember the sent cmd for sanity check */
     uint16_t req_code = msg->cmd.code;

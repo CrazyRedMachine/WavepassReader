@@ -61,8 +61,8 @@ typedef struct  iccx_state_s {
     uint8_t uid[8];
     uint8_t unk2;
     uint8_t keypad_started;
-    uint8_t key_events[2];
-    uint16_t key_state;
+    uint8_t key_events[2];    /* circular buffer of last 2 key events, low nibble is key number (from 1 to C going from bottom to top and left to right), high nibble is an auto-increment number */
+    uint16_t key_state;       /* bitfield with the currently pressed keys */
 } iccx_state_t;
 
 /* this struct is only used for slotted readers (to set locking mech etc) */

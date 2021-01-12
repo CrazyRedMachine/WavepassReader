@@ -1,6 +1,6 @@
 #include "ICCx.h"
 #include "Cipher.h"
-#define ICCX_DEBUG
+//#define ICCX_DEBUG
 //#define LOCK_ONLY_ISO15693
 #define EJECT_DELAY 1000
 
@@ -124,6 +124,11 @@ static bool iccx_get_state(uint8_t node_id, iccx_state_t *state, bool encrypted)
     struct ac_io_message msg;
     static icca_state_t icca_state;
 
+    if (encrypted) 
+    {
+      delay(60); // wait a little before requesting the state when in encrypted mode (else ICCB fails)
+    }
+    
     msg.addr = node_id + 1;
     msg.cmd.code = ac_io_u16(encrypted? AC_IO_CMD_ICCx_FEL_POLL : AC_IO_CMD_ICCx_POLL);
     msg.cmd.nbytes = 1;
@@ -304,8 +309,12 @@ static bool iccx_read_card(uint8_t node_id, iccx_state_t *state, bool encrypted)
 
 bool iccx_scan_card(uint8_t *type, uint8_t *uid, uint16_t *key_state, bool encrypted)
 {
+
+  iccx_state_t state;
+
+
 //icca_read_card suivi de get_state
- iccx_state_t state;
+
   #ifdef ICCX_DEBUG
    Serial.println("STEP1. CARD READ");
   #endif
@@ -315,7 +324,6 @@ bool iccx_scan_card(uint8_t *type, uint8_t *uid, uint16_t *key_state, bool encry
   #endif
   return false;
  }
-  //delay(200);
   
   #ifdef ICCX_DEBUG
    Serial.println("STEP2. GET STATE");
