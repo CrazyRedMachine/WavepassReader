@@ -6,6 +6,8 @@ USB HID card reader (cardIO) for official Konami eAmusement slotted and wavepass
 
 This is essentially a fork of [CrazyRedMachine/PN5180-cardio](https://github.com/CrazyRedMachine/PN5180-cardio).
 
+ACReal_IO and BT5 acio implementation code was very useful, especially for encrypted polls, thanks a lot :)
+
 # Supported devices
 
 USBHID code has been tested on Leonardo, and Pro Micro.
@@ -37,7 +39,7 @@ Just plug a keypad to your reader and it should work.
 ## USBHID
 
 - Download zip
-- (ICCA) set `bool g_encrypted = false` in the code
+- (ICCA) set `bool g_encrypted = false` in the code, (optional) uncomment the `#define LOCK_ONLY_ISO15693` in ICCx.cpp
 - flash the firmware
 - unplug the arduino
 - connect the reader to the Arduino.
@@ -52,4 +54,3 @@ The keypad should be recognized as an additional USB device.
 - draw wiring diagram
 - keypad support
 - spiceapi support
-- better ICCA support (lock mechanism)
