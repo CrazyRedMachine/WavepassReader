@@ -13,6 +13,7 @@ Cardio_ Cardio;
 #endif
 
 #define PIN_EJECT_BUTTON 7
+#define KEYPAD_BLANK_EJECT 1 //make blank key from keypad eject currently inserted card (ICCA only)
 
 bool g_passthrough = false; // native mode (use arduino as simple TTL to USB)
 bool g_encrypted = true; // FeliCa support and new readers (set to false for ICCA support, set to true otherwise)
@@ -79,7 +80,7 @@ void loop() {
     passthrough_loop();
     return;
   }
-//delay(1000);
+
   /* CARDIO MODE */
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
   uint8_t type = 0;
@@ -102,6 +103,11 @@ Serial.println("Error communicating with wavepass reader.");
   }
     /* KEYPAD */
      //everything is now in the keystate variable, we can use the masks in ICCx.h to parse
+
+ #ifdef KEYPAD_BLANK_EJECT
+  if (!g_encrypted && (keystate&ICCx_KEYPAD_MASK_EMPTY))
+    iccx_eject_card(AC_IO_ICCA_SLOT_STATE_OPEN);
+ #endif
  
  for (int i=0; i<12; i++)
  {
