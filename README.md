@@ -2,6 +2,10 @@
 
 USB HID card reader (cardIO) for official Konami eAmusement slotted and wavepass readers (ICCA, ICCB, ICCC) 
 
+# Demo
+
+https://www.instagram.com/p/CK-HtCKBKH1/
+
 # Acknowledgments
 
 This is essentially a fork of [CrazyRedMachine/PN5180-cardio](https://github.com/CrazyRedMachine/PN5180-cardio).
