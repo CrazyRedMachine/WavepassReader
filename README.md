@@ -17,7 +17,7 @@ Reader models ICCA (slotted reader), ICCB and ICCC have been tested and work per
 
 ## ICCA
 
-This card reader only supports ISO15693 cards and doesn't support the newer encrypted polling mode (which means you have to change `bool g_encrypted = true;` to `false` in `WavepassReader.ino`.
+This card reader only supports ISO15693 cards and doesn't support the newer encrypted polling mode (which means you have to change `bool g_encrypted = true;` to `false` in `WavepassReader.ino`).
 
 It tends to malfunction when powered directly by the Arduino, so I recommend using a 12V external PSU for this model. 
  
@@ -27,13 +27,15 @@ ICCA has a card locking mechanism which is supported by this firmware :
 
 - There is an alternate mode where it doesn't lock invalid cards at all, which can be enabled by uncommenting the `#define LOCK_ONLY_ISO15693` on top of `ICCx.cpp`
 
+- If you have a keypad, the unused blank key will trigger a card eject (this behavior can be inhibited by commenting the `#define KEYPAD_BLANK_EJECT` line)
+
 - You can wire a button to GND and the `PIN_EJECT_BUTTON` (configurable in WavepassReader.ino, defaults to gpio 7), then this button will serve as an eject button for the card.
 
 ## ICCB, ICCC
 
 These newer readers support both ISO15693 and FeliCa cards. In order to be able to read FeliCa cards you have to keep `bool g_encrypted = true;`. You can still deactivate the encrypted mode in which case only ISO15693 will be detected (there's no real use for this since ISO15693 are also detected in encrypted mode).
 
-While powered by 12V in the cabs, they worked perfectly fine for me on the arduino 5V pins.
+While powered by 12V in the cabs, they worked perfectly fine for me when directly powered from the arduino 5V pin.
 
 ## passthrough mode
 
@@ -101,4 +103,4 @@ The keypad should be recognized as an additional USB device.
 # Todo
 
 - spiceapi support
-- (ICCA) eject the card when holding the keypad empty key for 3 seconds
+- make passthrough and encrypted mode switch via HID messages
