@@ -76,18 +76,24 @@ ICCB and ICCC Wavepass readers work perfectly fine on 5V straight from the Ardui
 
 ICCA (slotted reader) didn't work well when powered by the arduino. While it worked from a 5V wall PSU, I recommend using 12V for them.
 
-For all models you **need a rs232 to TTL adapter** (I use a max3232 based one).
+For all models you **need a rs232 to TTL adapter** (I use a max3232 based one like HW-027 or the Keyestudio RS232 shield).
 
 - Plug the wavepass serial interface into the max3232 on rs232 side, then TTL side into the arduino Serial1 (pin 0/1 on leonardo/pro micro, pins 19/18 on mega).
 - Wire 3.3v from the arduino into the max3232 adapter on TTL side
 - (ICCA) Wire a 12v PSU into the wavepass reader
 - (ICCB, ICCC) Wire 5v from the arduino into the wavepass reader
 
-Here's an example with an ICCB
+Here are examples using an ICCB :
+
+With the HW-027 pcb
 
 ![leo_pinout](https://github.com/CrazyRedMachine/WavepassReader/blob/main/diagrams/leo_pinout.png?raw=true)
 
-(ICCC follows the same pinout, while ICCA uses a 12V PSU into the power connector instead of going to arduino 5V/GND). 
+or if you don't want to solder on a small pcb and would rather use the Keyestudio shield : 
+
+![shield_pinout](https://github.com/CrazyRedMachine/WavepassReader/blob/main/diagrams/shield_pinout.png?raw=true)
+
+(**Note:** ICCC follows the same pinout, while ICCA uses a 12V PSU into the power connector instead of going to arduino 5V/GND). 
 
 # How to use
 
