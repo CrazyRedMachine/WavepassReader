@@ -45,6 +45,14 @@ While powered by 12V in the cabs, they worked perfectly fine for me when directl
 
 There is a passthrough mode which can be activated by setting `bool g_passthrough = false;` to `true` in `WavepassReader.ino`. In this mode the arduino just acts as a TTL to USB adapter (so no real use for this one either) and will forward any message to and from the card reader to the computer.
 
+# Press key on boot
+
+I repurposed an old motherboard as a bartop, and got error messages on boot with "Press F1 to continue".
+
+I took advantage of this card reader to press F1 for me.
+
+Uncomment the `#define PRESS_KEY_ON_BOOT` to use this feature. You can set the key, the delay before press and the press duration.
+
 # Keypad support
 
 Keypad is supported for all reader models through the 10-pin central connector. 

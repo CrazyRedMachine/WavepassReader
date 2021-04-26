@@ -15,6 +15,11 @@ Cardio_ Cardio;
 #define PIN_EJECT_BUTTON 7
 #define KEYPAD_BLANK_EJECT 1 //make blank key from keypad eject currently inserted card (ICCA only)
 
+//#define PRESS_KEY_ON_BOOT //press a key on boot (useful for some motherboards)
+#define PRESS_KEY_TIMER 5000
+#define PRESS_KEY_DURATION 500
+#define PRESS_KEY KEY_F1
+
 bool g_passthrough = false; // native mode (use arduino as simple TTL to USB)
 bool g_encrypted = true; // FeliCa support and new readers (set to false for ICCA support, set to true otherwise)
 
@@ -53,6 +58,12 @@ if (!g_passthrough)
 #ifdef WITH_USBHID
   Keyboard.begin();
   Cardio.begin(false);
+  #ifdef PRESS_KEY_ON_BOOT
+  delay(PRESS_KEY_TIMER);
+  Keyboard.press(PRESS_KEY);
+  delay(PRESS_KEY_DURATION);
+  Keyboard.releaseAll();
+  #endif
 #endif
 
   delay(1000);
