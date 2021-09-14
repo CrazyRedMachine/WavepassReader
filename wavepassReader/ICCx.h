@@ -2,6 +2,8 @@
 #define iccx_h
 #include "ACIO.h"
 
+#define EJECT_DELAY 1000
+
 enum iccx_cmd {
     AC_IO_CMD_ICCx_QUEUE_LOOP_START = 0x0130,
     AC_IO_CMD_ICCx_ENGAGE = 0x0131,

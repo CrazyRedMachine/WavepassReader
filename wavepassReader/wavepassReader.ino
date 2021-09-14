@@ -1,4 +1,3 @@
-
 #include "ACIO.h"
 #include "ICCx.h"
 //#define DEBUG
@@ -12,8 +11,11 @@
 Cardio_ Cardio;
 #endif
 
+/* ICCA-only (slotted) options */
 #define PIN_EJECT_BUTTON 7
 #define KEYPAD_BLANK_EJECT 1 //make blank key from keypad eject currently inserted card (ICCA only)
+//#define SEND_ONLY_ONCE //send uid only once per i
+#define AUTO_EJECT_TIMER 0 //auto eject valid cards after a set delay (in ms), 0 to disable (note: must be smaller than USB_HID_COOLDOWN)
 
 //#define PRESS_KEY_ON_BOOT //press a key on boot (useful for some motherboards)
 #define PRESS_KEY_TIMER 5000
@@ -34,12 +36,14 @@ static int g_keypad_mask[12] =
  ICCx_KEYPAD_MASK_1, ICCx_KEYPAD_MASK_2, ICCx_KEYPAD_MASK_3, 
  ICCx_KEYPAD_MASK_4, ICCx_KEYPAD_MASK_5, ICCx_KEYPAD_MASK_6, 
  ICCx_KEYPAD_MASK_7, ICCx_KEYPAD_MASK_8, ICCx_KEYPAD_MASK_9};
- 
+
+#ifdef DEBUG
 static const char* g_keypad_printable[12] = 
 {"0", "00", "empty",
  "1", "2", "3", 
  "4", "5", "6", 
  "7", "8", "9"};
+#endif
 
 void setup() {
   // put your setup code here, to run once:
@@ -92,18 +96,39 @@ void loop() {
     return;
   }
 
+#ifdef WITH_USBHID
+  static unsigned long lastReport = 0;
+#endif
   /* CARDIO MODE */
   uint8_t uid[8] = {0,0,0,0,0,0,0,0};
   uint8_t type = 0;
   uint16_t keystate = 0;
   static uint16_t prev_keystate = 0;
-  
+#ifdef SEND_ONLY_ONCE
+  static bool can_send = true;
+#endif
+
   /* card eject button */
-  if (digitalRead(PIN_EJECT_BUTTON)==LOW)
+  if (!g_encrypted && (digitalRead(PIN_EJECT_BUTTON)==LOW))
   {
-    if (!g_encrypted)
       iccx_eject_card(AC_IO_ICCA_SLOT_STATE_OPEN);
+#ifdef SEND_ONLY_ONCE
+      can_send = true;
+#endif
   }
+
+#if AUTO_EJECT_TIMER > 0
+  static bool already_eject = false;
+  if (!g_encrypted && !already_eject && ((millis()-lastReport) >= AUTO_EJECT_TIMER))
+  {
+      iccx_eject_card(AC_IO_ICCA_SLOT_STATE_OPEN);
+      already_eject = true;
+#ifdef SEND_ONLY_ONCE
+      can_send = true;
+#endif
+  }
+
+#endif
   
   /* use acio commands to retrieve all info */
   if (!iccx_scan_card(&type,uid,&keystate,g_encrypted))
@@ -117,7 +142,12 @@ Serial.println("Error communicating with wavepass reader.");
 
  #ifdef KEYPAD_BLANK_EJECT
   if (!g_encrypted && (keystate&ICCx_KEYPAD_MASK_EMPTY))
+  {
     iccx_eject_card(AC_IO_ICCA_SLOT_STATE_OPEN);
+    #ifdef SEND_ONLY_ONCE
+    can_send = true;
+    #endif
+  }
  #endif
  
  for (int i=0; i<12; i++)
@@ -146,11 +176,19 @@ for (int i=0; i<8; i++)
 #endif
 
 #ifdef WITH_USBHID 
-  static unsigned long lastReport = 0;
   if (millis()-lastReport < USB_HID_COOLDOWN) return;
+#ifdef SEND_ONLY_ONCE
+  if (!g_encrypted && !can_send) return;
+#endif
     Cardio.setUID(type, uid);
     Cardio.sendState();
-    lastReport = millis();    
+    lastReport = millis();
+#if AUTO_EJECT_TIMER > 0    
+    already_eject = false;
+#endif
+#ifdef SEND_ONLY_ONCE
+    can_send = false;
+#endif
 #endif
   }
   

@@ -2,7 +2,6 @@
 #include "Cipher.h"
 //#define ICCX_DEBUG
 //#define LOCK_ONLY_ISO15693
-#define EJECT_DELAY 1000
 
 Cipher crypto;
 
